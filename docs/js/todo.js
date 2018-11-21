@@ -33,19 +33,26 @@ $("li", "#list-done").each(function (i, elm) {
     newBtnClose("&#215;", "li").appendTo($(elm));
 });
 
-$("#btn-add-item").on("click", function() {
+function addTodoItem() {
     var lstTodoItem = $("<li/>");
     lstTodoItem.addClass("nav-link")
 
-    var inputValue = $("#ipt-item").val();
+    var inputValue = $("#ipt-todo-item").val();
     if (inputValue === '') {
         alert("Please enter task name!");
     } else {
         lstTodoItem.append($("<span>" + inputValue + "</span>"));
         lstTodoItem.appendTo($("#list-todo"));
     }
-    $("#ipt-item").val("");
+    $("#ipt-todo-item").val("");
 
     newBtnDone("&#x2713;", "li").appendTo(lstTodoItem);
     newBtnClose("&#215;", "li").appendTo(lstTodoItem);
-})
+}
+
+$("#btn-add-item").on("click", addTodoItem);
+$("#ipt-todo-item").keypress(function(e){
+    if (e.which == 13) {
+        addTodoItem();
+    }
+});
