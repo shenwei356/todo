@@ -1,93 +1,71 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
-	"github.com/dgraph-io/badger"
+	"github.com/asdine/storm"
 )
 
 type ItemDB struct {
-	db *badger.DB
-
-	seq *badger.Sequence
+	db *storm.DB
 }
 
-func Connect(dir string) (*ItemDB, error) {
-	opts := badger.DefaultOptions
-	opts.Dir = dir
-	opts.ValueDir = dir
-
-	db, err := badger.Open(opts)
+func Connect(path string) (*ItemDB, error) {
+	dir := filepath.Dir(path)
+	existed, err := DirExists(dir)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("fail to check dir: %s", dir)
+		return nil, err
+	}
+	if !existed {
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			log.Fatalf("fail to mkdir: %s", dir)
+			return nil, err
+		}
+	}
+
+	db, err := storm.Open(path)
+	if err != nil {
+		log.Fatalf("fail to open dir: %s", dir)
 		return nil, err
 	}
 
-	seq, err := db.GetSequence([]byte("max_id"), 100)
-	if err != nil {
-		return nil, err
-	}
-
-	return &ItemDB{db: db, seq: seq}, nil
+	return &ItemDB{db: db}, nil
 }
 
 func (db *ItemDB) Close() error {
-	err := db.seq.Release()
-	if err != nil {
-		return err
-	}
-	return db.Close()
+	return db.db.Close()
 }
 
-func (db *ItemDB) PutItem(content []byte) (item Item, err error) {
-	var i uint64
-	var id []byte
-	err = db.db.Update(func(txn *badger.Txn) error {
-		i, err = db.seq.Next()
-		if err != nil {
-			return err
-		}
-		id = []byte(fmt.Sprintf("%d", i))
-		item = Item{ID: id, Done: false, Content: content}
-		ctt := MarshalItem(item)
-		return txn.Set(id, ctt)
-	})
-	if err != nil {
-		return Item{}, err
-	}
-	return Item{ID: id, Done: false, Content: content}, nil
-}
-
-func (db *ItemDB) GetItem(id []byte) (item Item, err error) {
-	var ctt []byte
-	err = db.db.View(func(txn *badger.Txn) error {
-		it, err := txn.Get(id)
-		if err != nil {
-			return err
-		}
-		err = it.Value(func(val []byte) error {
-			ctt = append([]byte{}, val...)
-			return nil
-		})
-		return nil
-	})
-	item, err = UnmarshalItem(ctt)
+func (db *ItemDB) PutItem(content []byte) (item *Item, err error) {
+	item = &Item{Done: false, Content: content}
+	err = db.db.Save(item)
 	if err != nil {
 		return item, err
 	}
-	item.ID = id
 	return item, nil
 }
 
-func (db *ItemDB) GetItems(n int) (Item, error) {
-	return Item{}, nil
+func (db *ItemDB) GetItem(id int) (item *Item, err error) {
+	var it Item
+	err = db.db.One("ID", id, &it)
+	if err != nil {
+		return &it, err
+	}
+	return &it, nil
+}
+
+func (db *ItemDB) GetItems(n int) (item *Item, err error) {
+	return item, nil
 }
 
 func (db *ItemDB) DeleteItem(id []byte) error {
 	return nil
 }
 
-func (db *ItemDB) SearchItems(query []byte) ([]Item, error) {
+func (db *ItemDB) SearchItems(query []byte) ([]*Item, error) {
 	return nil, nil
 }

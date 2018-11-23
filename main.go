@@ -5,14 +5,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/valve"
 )
 
 const HOMEPAGE = "https://bioinf.shenwei.me/todo"
 
-var dbPath = "./db"
+var dbPath = "db/todo.db"
 
 var db *ItemDB
 
@@ -51,7 +53,7 @@ func main() {
 		r.Post("/", putItem)
 		r.Get("/", getItems)
 
-		r.Route(`/{itemID:\d+}`, func(r chi.Router) {
+		r.Route(`/{id:\d+}`, func(r chi.Router) {
 			r.Get("/", getItem)
 			r.Put("/", updateItem)
 			r.Delete("/", deleteItem)
@@ -60,31 +62,23 @@ func main() {
 		r.Get("/search", searchItems)
 	})
 
+	baseCtx := valve.New().Context()
+	server := http.Server{Addr: ":8080", Handler: chi.ServerBaseContext(baseCtx, r)}
+
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
 	go func() {
-		closed := false
-		for range signalChan {
-			log.Println("received an interrupt")
+		select {
+		case <-signalChan:
+			log.Print("closing server")
+			server.Shutdown(baseCtx)
+			log.Print("server closed")
 
-			if closed {
-				os.Exit(0)
-			}
-
-			log.Printf("closing db: %s", dbPath)
-			err = db.Close()
-			if err != nil {
-				log.Fatalf("fail to close db")
-				return
-			}
-			log.Printf("db closed: %s", dbPath)
-
-			closed = true
-			break
+			return
 		}
 	}()
-
-	http.ListenAndServe(":8080", r)
+	log.Print("server started")
+	server.ListenAndServe()
 }
 
 func putItem(w http.ResponseWriter, r *http.Request) {
@@ -98,21 +92,26 @@ func putItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	w.Write([]byte(item.String()))
+	w.Write([]byte(item.String() + "\n"))
 }
 
 func getItem(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	if id == "" {
+	idS := chi.URLParam(r, "id")
+	if idS == "" {
 		http.Error(w, http.StatusText(422), 422)
 		return
 	}
-	item, err := db.GetItem([]byte(id))
+	id, err := strconv.Atoi(idS)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	w.Write([]byte(item.String()))
+	item, err := db.GetItem(id)
+	if err != nil {
+		http.Error(w, http.StatusText(404), 404)
+		return
+	}
+	w.Write([]byte(item.String() + "\n"))
 }
 
 func getItems(w http.ResponseWriter, r *http.Request) {
