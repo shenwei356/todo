@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -24,13 +23,16 @@ func main() {
 		log.Fatalf("fail to connect db: %s", dbPath)
 		return
 	}
+	log.Printf("db connected: %s", dbPath)
 
 	defer func() {
+		log.Printf("closing db: %s", dbPath)
 		err = db.Close()
 		if err != nil {
 			log.Fatalf("fail to close db")
 			return
 		}
+		log.Printf("db closed: %s", dbPath)
 	}()
 
 	r := chi.NewRouter()
@@ -69,13 +71,13 @@ func main() {
 				os.Exit(0)
 			}
 
-			log.Println("received an interrupt, stopping unfinished commands...")
+			log.Printf("closing db: %s", dbPath)
 			err = db.Close()
 			if err != nil {
 				log.Fatalf("fail to close db")
 				return
 			}
-			log.Println("db closed")
+			log.Printf("db closed: %s", dbPath)
 
 			closed = true
 			break
@@ -99,9 +101,6 @@ func putItem(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(item.String()))
 }
 
-func getItems(w http.ResponseWriter, r *http.Request) {
-}
-
 func getItem(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -113,13 +112,17 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	fmt.Println(item)
-	w.Write([]byte(fmt.Sprintf("id: %d", item.ID)))
+	w.Write([]byte(item.String()))
+}
+
+func getItems(w http.ResponseWriter, r *http.Request) {
 
 }
+
 func updateItem(w http.ResponseWriter, r *http.Request) {
 
 }
+
 func deleteItem(w http.ResponseWriter, r *http.Request) {
 
 }

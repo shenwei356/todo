@@ -24,7 +24,7 @@ func MarshalItem(it Item) []byte {
 	return data
 }
 
-var ErrInvalidItem = errors.New("db: invalid item")
+var ErrInvalidItem = errors.New("db: invalid marshalled item data")
 
 func UnmarshalItem(val []byte) (Item, error) {
 	switch len(val) {
@@ -35,8 +35,4 @@ func UnmarshalItem(val []byte) (Item, error) {
 	default:
 	}
 	return Item{Done: val[0] != 0, Content: val[1:]}, nil
-}
-
-func dbGetItem(id string) (Item, error) {
-	return Item{}, nil
 }
