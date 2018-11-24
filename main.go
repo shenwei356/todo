@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 
 	"github.com/francoispqt/gojay"
@@ -14,7 +15,7 @@ import (
 	"github.com/go-chi/valve"
 )
 
-const HOMEPAGE = "https://bioinf.shenwei.me/todo"
+// const HOMEPAGE = "http://app.shenwei.me/todo"
 
 var dbPath = "db/todo.db"
 
@@ -24,7 +25,7 @@ func main() {
 	var err error
 	db, err = Connect(dbPath)
 	if err != nil {
-		log.Fatalf("fail to connect db: %s", dbPath)
+		log.Fatalf("fail to connect db: %s: %s", dbPath, err)
 		return
 	}
 	log.Printf("db connected: %s", dbPath)
@@ -33,7 +34,7 @@ func main() {
 		log.Printf("closing db: %s", dbPath)
 		err = db.Close()
 		if err != nil {
-			log.Fatalf("fail to close db")
+			log.Fatalf("fail to close db: %s", err)
 			return
 		}
 		log.Printf("db closed: %s", dbPath)
@@ -47,9 +48,9 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Throttle(2))
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, HOMEPAGE, http.StatusSeeOther)
-	})
+	// r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	http.Redirect(w, r, HOMEPAGE, http.StatusSeeOther)
+	// })
 
 	r.Route("/items", func(r chi.Router) {
 		r.Post("/", putItem)
@@ -63,6 +64,10 @@ func main() {
 
 		r.Get("/search", searchItems)
 	})
+
+	pwd, _ := os.Getwd()
+	filesDir := filepath.Join(pwd, "docs")
+	FileServer(r, "/", http.Dir(filesDir))
 
 	baseCtx := valve.New().Context()
 	server := http.Server{Addr: ":8080", Handler: chi.ServerBaseContext(baseCtx, r)}
@@ -79,8 +84,12 @@ func main() {
 			return
 		}
 	}()
-	log.Print("server started")
-	server.ListenAndServe()
+	log.Print("starting server")
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Fatalf("fail to start server: %s", err)
+		return
+	}
 }
 
 func putItem(w http.ResponseWriter, r *http.Request) {

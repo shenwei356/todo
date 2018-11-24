@@ -2,6 +2,8 @@
 
 Just a toy for learning web development.
 
+Demo: [http://data.shenwei.me/todo](http://data.shenwei.me/todo)
+
 ## Architecture
 
 Frontend
@@ -13,7 +15,7 @@ Frontend
 Backend
 
 - Router: [chi](https://github.com/go-chi/chi)
-- DB: [badger](https://github.com/dgraph-io/badger)
+- DB: [bbolt](https://github.com/etcd-io/bbolt)([storm](https://github.com/asdine/storm))
 
 ## RESTful API
 
@@ -24,3 +26,16 @@ Backend
     - `GET`
     - `PUT`
     - `DELETE`
+- `/items/search`
+    - `GET`
+
+## Try
+
+[download](https://github.com/shenwei356/todo/releases), decompress and run. For example:
+
+    $ tar -zxvf todo_linux_amd64.tar.gz
+    $ cd todo
+    $ ./todo
+
+Visit [http://127.0.0.1:8080](http://127.0.0.1:8080) .
+
