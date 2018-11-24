@@ -42,8 +42,8 @@ func (db *ItemDB) Close() error {
 	return db.db.Close()
 }
 
-func (db *ItemDB) PutItem(content string) (item *Item, err error) {
-	item = &Item{Done: false, Content: content}
+func (db *ItemDB) PutItem(task string) (item *Item, err error) {
+	item = &Item{Done: false, Task: task}
 	err = db.db.Save(item)
 	if err != nil {
 		return item, err
@@ -82,6 +82,6 @@ func (db *ItemDB) UpdateItem(item *Item) (err error) {
 }
 
 func (db *ItemDB) SearchItems(query string) (items []Item, err error) {
-	err = db.db.Select(q.Re("Content", "(?i)"+query)).Find(&items)
+	err = db.db.Select(q.Re("Task", "(?i)"+query)).Find(&items)
 	return items, err
 }

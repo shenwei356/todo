@@ -1,12 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+
+	"github.com/francoispqt/gojay"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -93,7 +94,15 @@ func putItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	w.Write([]byte(item.String() + "\n"))
+
+	// w.Write([]byte(item.String() + "\n"))
+
+	b, err := gojay.MarshalJSONObject(item)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Write(b)
 }
 
 func getItem(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +121,15 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(404), 404)
 		return
 	}
-	w.Write([]byte(item.String() + "\n"))
+
+	// w.Write([]byte(item.String() + "\n"))
+
+	b, err := gojay.MarshalJSONObject(item)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Write(b)
 }
 
 func getItems(w http.ResponseWriter, r *http.Request) {
@@ -121,9 +138,18 @@ func getItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	for _, item := range items {
-		w.Write([]byte(item.String() + "\n"))
+
+	// for _, item := range items {
+	// 	w.Write([]byte(item.String() + "\n"))
+	// }
+
+	t := Items(items)
+	b, err := gojay.MarshalJSONArray(&t)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
 	}
+	w.Write(b)
 }
 
 func updateItem(w http.ResponseWriter, r *http.Request) {
@@ -145,9 +171,9 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	doneS := r.FormValue("done")
-	contentS := r.FormValue("content")
+	taskS := r.FormValue("task")
 
-	if doneS == "" && contentS == "" {
+	if doneS == "" && taskS == "" {
 		w.Write([]byte(item.String() + "\n"))
 		return
 	}
@@ -157,8 +183,8 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 	} else if doneS == "false" {
 		item.Done = false
 	}
-	if contentS != "" {
-		item.Content = contentS
+	if taskS != "" {
+		item.Task = taskS
 	}
 
 	err = db.UpdateItem(item)
@@ -166,7 +192,15 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	w.Write([]byte(item.String() + "\n"))
+
+	// w.Write([]byte(item.String() + "\n"))
+
+	b, err := gojay.MarshalJSONObject(item)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Write(b)
 }
 
 func deleteItem(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +221,7 @@ func deleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("item #%d deleted\n", id)))
+	// w.Write([]byte(fmt.Sprintf("item #%d deleted\n", id)))
 }
 
 func searchItems(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +243,16 @@ func searchItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(404), 404)
 		return
 	}
-	for _, item := range items {
-		w.Write([]byte(item.String() + "\n"))
+
+	// for _, item := range items {
+	// 	w.Write([]byte(item.String() + "\n"))
+	// }
+
+	t := Items(items)
+	b, err := gojay.MarshalJSONArray(&t)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
 	}
+	w.Write(b)
 }
