@@ -2,7 +2,7 @@
 
 Just a toy for learning web development.
 
-Demo: [http://data.shenwei.me/todo](http://data.shenwei.me/todo)
+[Demo](http://app.shenwei.me:8080)
 
 ## Architecture
 
