@@ -7,7 +7,7 @@ import (
 type Item struct {
 	ID      int `storm:"id,increment"`
 	Done    bool
-	Content []byte
+	Content string
 }
 
 func (it Item) String() string {

@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/asdine/storm/q"
+
 	"github.com/asdine/storm"
 )
 
@@ -40,7 +42,7 @@ func (db *ItemDB) Close() error {
 	return db.db.Close()
 }
 
-func (db *ItemDB) PutItem(content []byte) (item *Item, err error) {
+func (db *ItemDB) PutItem(content string) (item *Item, err error) {
 	item = &Item{Done: false, Content: content}
 	err = db.db.Save(item)
 	if err != nil {
@@ -58,14 +60,28 @@ func (db *ItemDB) GetItem(id int) (item *Item, err error) {
 	return &it, nil
 }
 
-func (db *ItemDB) GetItems(n int) (item *Item, err error) {
-	return item, nil
+func (db *ItemDB) GetItems() (items []Item, err error) {
+	err = db.db.All(&items)
+	return items, err
 }
 
-func (db *ItemDB) DeleteItem(id []byte) error {
-	return nil
+func (db *ItemDB) DeleteItem(id int) (err error) {
+	var it Item
+	err = db.db.One("ID", id, &it)
+	if err != nil {
+		return err
+	}
+
+	err = db.db.DeleteStruct(&it)
+	return err
 }
 
-func (db *ItemDB) SearchItems(query []byte) ([]*Item, error) {
-	return nil, nil
+func (db *ItemDB) UpdateItem(item *Item) (err error) {
+	err = db.db.Update(item)
+	return err
+}
+
+func (db *ItemDB) SearchItems(query string) (items []Item, err error) {
+	err = db.db.Select(q.Re("Content", "(?i)"+query)).Find(&items)
+	return items, err
 }

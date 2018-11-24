@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -87,7 +88,7 @@ func putItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(422), 422)
 		return
 	}
-	item, err := db.PutItem([]byte(task))
+	item, err := db.PutItem(task)
 	if err != nil {
 		http.Error(w, http.StatusText(500), 500)
 		return
@@ -115,17 +116,100 @@ func getItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func getItems(w http.ResponseWriter, r *http.Request) {
-
+	items, err := db.GetItems()
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	for _, item := range items {
+		w.Write([]byte(item.String() + "\n"))
+	}
 }
 
 func updateItem(w http.ResponseWriter, r *http.Request) {
+	idS := chi.URLParam(r, "id")
+	if idS == "" {
+		http.Error(w, http.StatusText(422), 422)
+		return
+	}
+	id, err := strconv.Atoi(idS)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 
+	item, err := db.GetItem(id)
+	if err != nil {
+		http.Error(w, http.StatusText(404), 404)
+		return
+	}
+
+	doneS := r.FormValue("done")
+	contentS := r.FormValue("content")
+
+	if doneS == "" && contentS == "" {
+		w.Write([]byte(item.String() + "\n"))
+		return
+	}
+
+	if doneS == "true" {
+		item.Done = true
+	} else if doneS == "false" {
+		item.Done = false
+	}
+	if contentS != "" {
+		item.Content = contentS
+	}
+
+	err = db.UpdateItem(item)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	w.Write([]byte(item.String() + "\n"))
 }
 
 func deleteItem(w http.ResponseWriter, r *http.Request) {
+	idS := chi.URLParam(r, "id")
+	if idS == "" {
+		http.Error(w, http.StatusText(422), 422)
+		return
+	}
+	id, err := strconv.Atoi(idS)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 
+	err = db.DeleteItem(id)
+	if err != nil {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	w.Write([]byte(fmt.Sprintf("item #%d deleted\n", id)))
 }
 
 func searchItems(w http.ResponseWriter, r *http.Request) {
+	q := r.FormValue("q")
+	if q == "" {
+		items, err := db.GetItems()
+		if err != nil {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+		for _, item := range items {
+			w.Write([]byte(item.String() + "\n"))
+		}
+		return
+	}
 
+	items, err := db.SearchItems(q)
+	if err != nil {
+		http.Error(w, http.StatusText(404), 404)
+		return
+	}
+	for _, item := range items {
+		w.Write([]byte(item.String() + "\n"))
+	}
 }
