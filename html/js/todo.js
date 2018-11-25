@@ -22,7 +22,7 @@ function newBtnClose(text, parent){
             url: url+"/items/" + id,
             type: "DELETE",
             success: function(result) {
-                div.delay(100).slideUp(400, function() {
+                div.slideUp(400, function() {
                     div.remove();
                 });
             },
@@ -52,7 +52,7 @@ function newBtnDone(text, parent){
             data: {done: "true", task: task}
             })
             .done(function(result) {
-                div.delay(100).slideUp(400, function() {
+                div.slideUp(300, function() {
                     div.children("#btn-done").remove();
                     div.show().appendTo($("#list-done"));
                 });
