@@ -10,7 +10,7 @@ d=todo
 for f in todo_*; do
     mkdir -p $dir/$f/$d;
     mv $f $dir/$f/$d;
-    cp -r docs LICENSE $dir/$f/$d;
+    cp -r html LICENSE $dir/$f/$d;
     cd $dir/$f;
     mv $d/$f $d/$(echo $f | perl -pe 's/_[^\.]+//g');
     tar -zcf $f.tar.gz $d;

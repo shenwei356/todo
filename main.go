@@ -66,7 +66,7 @@ func main() {
 	})
 
 	pwd, _ := os.Getwd()
-	filesDir := filepath.Join(pwd, "docs")
+	filesDir := filepath.Join(pwd, "html")
 	FileServer(r, "/", http.Dir(filesDir))
 
 	baseCtx := valve.New().Context()
